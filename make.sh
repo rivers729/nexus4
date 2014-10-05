@@ -10,7 +10,7 @@ export KBUILD_BUILD_HOST="hanafi"
 export LOCALVERSION="-KleenKernel-Test"
 #echo "Copy backup config..."
 #cp najmi-mako-config .config
-make slim_mako_defconfig
+make mako_defconfig
 make menuconfig
 #echo "Begin compile..."
 make -j8
