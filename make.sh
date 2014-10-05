@@ -4,7 +4,7 @@ unset CROSS_COMPILE
 #export CROSS_COMPILE=/opt/gcc-4.7-linaro/bin/arm-cortex_a15-linux-gnueabi-
 export CROSS_COMPILE=/home/hafizan/opt/arm-eabi-4.8-sm/bin/arm-eabi-
 #echo "Cleaning old craps..."
-#make distclean
+make distclean
 export KBUILD_BUILD_USER=hafizan
 export KBUILD_BUILD_HOST="hanafi"
 export LOCALVERSION="-KleenKernel-Test"
