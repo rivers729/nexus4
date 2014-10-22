@@ -7,7 +7,7 @@ export CROSS_COMPILE=/home/hafizan/opt/arm-eabi-4.8-sm/bin/arm-eabi-
 make distclean
 export KBUILD_BUILD_USER=hafizan
 export KBUILD_BUILD_HOST="hanafi"
-export LOCALVERSION="-Aqualogic-v2.2"
+export LOCALVERSION="-Aqualogic-v2.4-LTest"
 #echo "Copy backup config..."
 #cp najmi-mako-config .config
 make mako_defconfig
