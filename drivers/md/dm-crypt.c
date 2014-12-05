@@ -1534,135 +1534,147 @@ bad_mem:
  */
 static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 {
-        struct crypt_config *cc;
-        unsigned int key_size, opt_params;
-        unsigned long long tmpll;
-        int ret;
-        struct dm_arg_set as;
-        const char *opt_string;
-        char dummy;
+	struct crypt_config *cc;
+	unsigned int key_size, opt_params;
+	unsigned long long tmpll;
+	int ret;
+	size_t iv_size_padding;
+	struct dm_arg_set as;
+	const char *opt_string;
+	char dummy;
 
-        static struct dm_arg _args[] = {
-                {0, 1, "Invalid number of feature args"},
-        };
+	static struct dm_arg _args[] = {
+		{0, 1, "Invalid number of feature args"},
+	};
 
-        if (argc < 5) {
-                ti->error = "Not enough arguments";
-                return -EINVAL;
-        }
+	if (argc < 5) {
+		ti->error = "Not enough arguments";
+		return -EINVAL;
+	}
 
-        key_size = strlen(argv[1]) >> 1;
+	key_size = strlen(argv[1]) >> 1;
 
-        cc = kzalloc(sizeof(*cc) + key_size * sizeof(u8), GFP_KERNEL);
-        if (!cc) {
-                ti->error = "Cannot allocate encryption context";
-                return -ENOMEM;
-        }
-        cc->key_size = key_size;
+	cc = kzalloc(sizeof(*cc) + key_size * sizeof(u8), GFP_KERNEL);
+	if (!cc) {
+		ti->error = "Cannot allocate encryption context";
+		return -ENOMEM;
+	}
+	cc->key_size = key_size;
 
-        ti->private = cc;
-        ret = crypt_ctr_cipher(ti, argv[0], argv[1]);
-        if (ret < 0)
-                goto bad;
+	ti->private = cc;
+	ret = crypt_ctr_cipher(ti, argv[0], argv[1]);
+	if (ret < 0)
+		goto bad;
 
-        ret = -ENOMEM;
-        cc->io_pool = mempool_create_slab_pool(MIN_IOS, _crypt_io_pool);
-        if (!cc->io_pool) {
-                ti->error = "Cannot allocate crypt io mempool";
-                goto bad;
-        }
+	ret = -ENOMEM;
+	cc->io_pool = mempool_create_slab_pool(MIN_IOS, _crypt_io_pool);
+	if (!cc->io_pool) {
+		ti->error = "Cannot allocate crypt io mempool";
+		goto bad;
+	}
 
-        cc->dmreq_start = sizeof(struct ablkcipher_request);
-        cc->dmreq_start += crypto_ablkcipher_reqsize(any_tfm(cc));
-        cc->dmreq_start = ALIGN(cc->dmreq_start, crypto_tfm_ctx_alignment());
-        cc->dmreq_start += crypto_ablkcipher_alignmask(any_tfm(cc)) &
-                           ~(crypto_tfm_ctx_alignment() - 1);
+	cc->dmreq_start = sizeof(struct ablkcipher_request);
+	cc->dmreq_start += crypto_ablkcipher_reqsize(any_tfm(cc));
+	cc->dmreq_start = ALIGN(cc->dmreq_start, __alignof__(struct dm_crypt_request));
 
-        cc->req_pool = mempool_create_kmalloc_pool(MIN_IOS, cc->dmreq_start +
-                        sizeof(struct dm_crypt_request) + cc->iv_size);
-        if (!cc->req_pool) {
-                ti->error = "Cannot allocate crypt request mempool";
-                goto bad;
-        }
+	if (crypto_ablkcipher_alignmask(any_tfm(cc)) < CRYPTO_MINALIGN) {
+		/* Allocate the padding exactly */
+		iv_size_padding = -(cc->dmreq_start + sizeof(struct dm_crypt_request))
+				& crypto_ablkcipher_alignmask(any_tfm(cc));
+	} else {
+		/*
+		 * If the cipher requires greater alignment than kmalloc
+		 * alignment, we don't know the exact position of the
+		 * initialization vector. We must assume worst case.
+		 */
+		iv_size_padding = crypto_ablkcipher_alignmask(any_tfm(cc));
+	}
 
-        cc->page_pool = mempool_create_page_pool(MIN_POOL_PAGES, 0);
-        if (!cc->page_pool) {
-                ti->error = "Cannot allocate page mempool";
-                goto bad;
-        }
+	cc->req_pool = mempool_create_kmalloc_pool(MIN_IOS, cc->dmreq_start +
+			sizeof(struct dm_crypt_request) + iv_size_padding + cc->iv_size);
+	if (!cc->req_pool) {
+		ti->error = "Cannot allocate crypt request mempool";
+		goto bad;
+	}
 
-        cc->bs = bioset_create(MIN_IOS, 0);
-        if (!cc->bs) {
-                ti->error = "Cannot allocate crypt bioset";
-                goto bad;
-        }
+	cc->page_pool = mempool_create_page_pool(MIN_POOL_PAGES, 0);
+	if (!cc->page_pool) {
+		ti->error = "Cannot allocate page mempool";
+		goto bad;
+	}
 
-        ret = -EINVAL;
-        if (sscanf(argv[2], "%llu%c", &tmpll, &dummy) != 1) {
-                ti->error = "Invalid iv_offset sector";
-                goto bad;
-        }
-        cc->iv_offset = tmpll;
+	cc->bs = bioset_create(MIN_IOS, 0);
+	if (!cc->bs) {
+		ti->error = "Cannot allocate crypt bioset";
+		goto bad;
+	}
 
-        if (dm_get_device(ti, argv[3], dm_table_get_mode(ti->table), &cc->dev)) {
-                ti->error = "Device lookup failed";
-                goto bad;
-        }
+	ret = -EINVAL;
+	if (sscanf(argv[2], "%llu%c", &tmpll, &dummy) != 1) {
+		ti->error = "Invalid iv_offset sector";
+		goto bad;
+	}
+	cc->iv_offset = tmpll;
 
-        if (sscanf(argv[4], "%llu%c", &tmpll, &dummy) != 1) {
-                ti->error = "Invalid device sector";
-                goto bad;
-        }
-        cc->start = tmpll;
+	if (dm_get_device(ti, argv[3], dm_table_get_mode(ti->table), &cc->dev)) {
+		ti->error = "Device lookup failed";
+		goto bad;
+	}
 
-        argv += 5;
-        argc -= 5;
+	if (sscanf(argv[4], "%llu%c", &tmpll, &dummy) != 1) {
+		ti->error = "Invalid device sector";
+		goto bad;
+	}
+	cc->start = tmpll;
 
-        /* Optional parameters */
-        if (argc) {
-                as.argc = argc;
-                as.argv = argv;
+	argv += 5;
+	argc -= 5;
 
-                ret = dm_read_arg_group(_args, &as, &opt_params, &ti->error);
-                if (ret)
-                        goto bad;
+	/* Optional parameters */
+	if (argc) {
+		as.argc = argc;
+		as.argv = argv;
 
-                opt_string = dm_shift_arg(&as);
+		ret = dm_read_arg_group(_args, &as, &opt_params, &ti->error);
+		if (ret)
+			goto bad;
 
-                if (opt_params == 1 && opt_string &&
-                    !strcasecmp(opt_string, "allow_discards"))
-                        ti->num_discard_requests = 1;
-                else if (opt_params) {
-                        ret = -EINVAL;
-                        ti->error = "Invalid feature arguments";
-                        goto bad;
-                }
-        }
+		opt_string = dm_shift_arg(&as);
 
-        ret = -ENOMEM;
-        cc->io_queue = alloc_workqueue("kcryptd_io",
-                                       WQ_NON_REENTRANT|
-                                       WQ_MEM_RECLAIM,
-                                       1);
-        if (!cc->io_queue) {
-                ti->error = "Couldn't create kcryptd io queue";
-                goto bad;
-        }
+		if (opt_params == 1 && opt_string &&
+		    !strcasecmp(opt_string, "allow_discards"))
+			ti->num_discard_requests = 1;
+		else if (opt_params) {
+			ret = -EINVAL;
+			ti->error = "Invalid feature arguments";
+			goto bad;
+		}
+	}
 
-        cc->crypt_queue = alloc_workqueue("kcryptd",
-                                          WQ_NON_REENTRANT|
-                                          WQ_CPU_INTENSIVE|
-                                          WQ_MEM_RECLAIM,
-                                          1);
-        if (!cc->crypt_queue) {
-                ti->error = "Couldn't create kcryptd queue";
-                goto bad;
-        }
+	ret = -ENOMEM;
+	cc->io_queue = alloc_workqueue("kcryptd_io",
+				       WQ_NON_REENTRANT|
+				       WQ_MEM_RECLAIM,
+				       1);
+	if (!cc->io_queue) {
+		ti->error = "Couldn't create kcryptd io queue";
+		goto bad;
+	}
 
-        ti->num_flush_requests = 1;
-        ti->discard_zeroes_data_unsupported = 1;
+	cc->crypt_queue = alloc_workqueue("kcryptd",
+					  WQ_NON_REENTRANT|
+					  WQ_CPU_INTENSIVE|
+					  WQ_MEM_RECLAIM,
+					  1);
+	if (!cc->crypt_queue) {
+		ti->error = "Couldn't create kcryptd queue";
+		goto bad;
+	}
 
-        return 0;
+	ti->num_flush_requests = 1;
+	ti->discard_zeroes_data_unsupported = 1;
+
+	return 0;
 
 bad:
         crypt_dtr(ti);
