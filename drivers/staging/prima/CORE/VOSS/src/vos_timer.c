@@ -46,13 +46,6 @@
   \brief virtual Operating System Servies (vOS)
 
    Definitions for vOSS Timer services
-<<<<<<< HEAD:CORE/VOSS/src/vos_timer.c
-  
-   Copyright 2008 (c) Qualcomm, Incorporated.  All Rights Reserved.
-   
-   Qualcomm Confidential and Proprietary.
-  
-=======
 
    Copyright 2008 (c) Qualcomm Technologies, Inc.  All Rights Reserved.
 

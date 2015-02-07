@@ -52,15 +52,6 @@
   \file  vos_Types.h
 
   \brief virtual Operating System Servies (vOS)
-<<<<<<< HEAD:CORE/VOSS/inc/vos_types.h
-               
-   Basic type definitions 
-  
-   Copyright 2008 (c) Qualcomm, Incorporated.  All Rights Reserved.
-   
-   Qualcomm Confidential and Proprietary.
-  
-=======
 
    Basic type definitions
 

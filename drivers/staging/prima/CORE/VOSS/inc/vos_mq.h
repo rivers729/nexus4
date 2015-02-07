@@ -49,13 +49,6 @@
   \brief virtual Operating System Services (vOSS) message queue APIs
 
    Message Queue Definitions and API
-<<<<<<< HEAD:CORE/VOSS/inc/vos_mq.h
-  
-   Copyright 2008 (c) Qualcomm, Incorporated.  All Rights Reserved.
-   
-   Qualcomm Confidential and Proprietary.
-  
-=======
 
    Copyright 2008 (c) Qualcomm Technologies, Inc.  All Rights Reserved.
 
