@@ -552,10 +552,17 @@ static void do_nightmare_timer(struct work_struct *work)
 		delay -= jiffies % delay;
 	}
 
+<<<<<<< HEAD
 #if 0
 	if (need_load_eval(nightmare_cpuinfo, sampling_rate))
 #endif
 		nightmare_check_cpu(nightmare_cpuinfo);
+=======
+	if (delay <= 0)
+		delay = usecs_to_jiffies(MIN_SAMPLING_RATE);
+
+	mod_delayed_work_on(cpu, system_wq, &nightmare_cpuinfo->work, delay);
+>>>>>>> f8cb8bb... alucard, darkness, nightmare governors: check if policy->cpu is assigned on the right cpu. Code style.
 
 	queue_delayed_work_on(cpu, nightmare_wq, &nightmare_cpuinfo->work, delay);
 	mutex_unlock(&nightmare_cpuinfo->timer_mutex);
@@ -575,7 +582,9 @@ static int cpufreq_governor_nightmare(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
-		if ((!cpu_online(cpu)) || (!policy->cur))
+		if ((!cpu_online(cpu)) ||
+			(!policy->cur) ||
+			(cpu != this_nightmare_cpuinfo->cpu))
 			return -EINVAL;
 
 		mutex_lock(&nightmare_mutex);
@@ -585,7 +594,6 @@ static int cpufreq_governor_nightmare(struct cpufreq_policy *policy,
 		this_nightmare_cpuinfo->prev_cpu_idle = get_cpu_idle_time(cpu, &this_nightmare_cpuinfo->prev_cpu_wall, io_busy);
 
 		this_nightmare_cpuinfo->freq_table = cpufreq_frequency_get_table(cpu);
-		this_nightmare_cpuinfo->cpu = cpu;
 
 		nightmare_enable++;
 		/*
@@ -615,7 +623,13 @@ static int cpufreq_governor_nightmare(struct cpufreq_policy *policy,
 			delay -= jiffies % delay;
 		}
 
+<<<<<<< HEAD
 		this_nightmare_cpuinfo->enable = 1;
+=======
+		if (delay <= 0)
+			delay = usecs_to_jiffies(MIN_SAMPLING_RATE);
+
+>>>>>>> f8cb8bb... alucard, darkness, nightmare governors: check if policy->cpu is assigned on the right cpu. Code style.
 		INIT_DEFERRABLE_WORK(&this_nightmare_cpuinfo->work, do_nightmare_timer);
 		queue_delayed_work_on(this_nightmare_cpuinfo->cpu, nightmare_wq, &this_nightmare_cpuinfo->work, delay);
 
@@ -668,11 +682,19 @@ struct cpufreq_governor cpufreq_gov_nightmare = {
 
 static int __init cpufreq_gov_nightmare_init(void)
 {
+<<<<<<< HEAD
 	nightmare_wq = alloc_workqueue("nightmare_wq", WQ_HIGHPRI, 0);
 
 	if (!nightmare_wq) {
 		printk(KERN_ERR "Failed to create nightmare workqueue\n");
 		return -EFAULT;
+=======
+	unsigned int cpu;
+
+	for_each_possible_cpu(cpu) {
+		struct cpufreq_nightmare_cpuinfo *this_nightmare_cpuinfo = &per_cpu(od_nightmare_cpuinfo, cpu);
+		this_nightmare_cpuinfo->cpu = cpu;
+>>>>>>> f8cb8bb... alucard, darkness, nightmare governors: check if policy->cpu is assigned on the right cpu. Code style.
 	}
 
 	return cpufreq_register_governor(&cpufreq_gov_nightmare);

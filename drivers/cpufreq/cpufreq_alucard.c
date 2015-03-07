@@ -517,10 +517,17 @@ static void do_alucard_timer(struct work_struct *work)
 		delay -= jiffies % delay;
 	}
 
+<<<<<<< HEAD
 #if 0
 	if (need_load_eval(alucard_cpuinfo, sampling_rate))
 #endif
 		alucard_check_cpu(alucard_cpuinfo);
+=======
+	if (delay <= 0)
+		delay = usecs_to_jiffies(MIN_SAMPLING_RATE);
+
+	mod_delayed_work_on(cpu, system_wq, &alucard_cpuinfo->work, delay);
+>>>>>>> f8cb8bb... alucard, darkness, nightmare governors: check if policy->cpu is assigned on the right cpu. Code style.
 
 	queue_delayed_work_on(cpu, alucard_wq, &alucard_cpuinfo->work, delay);
 	mutex_unlock(&alucard_cpuinfo->timer_mutex);
@@ -538,12 +545,13 @@ static int cpufreq_governor_alucard(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
-		if ((!cpu_online(cpu)) || (!policy->cur))
+		if ((!cpu_online(cpu)) || 
+			(!policy->cur) || 
+			(cpu != this_alucard_cpuinfo->cpu))
 			return -EINVAL;
 
 		mutex_lock(&alucard_mutex);
 
-		this_alucard_cpuinfo->cpu = cpu;
 		this_alucard_cpuinfo->cur_policy = policy;
 
 		this_alucard_cpuinfo->prev_cpu_idle = get_cpu_idle_time(cpu, &this_alucard_cpuinfo->prev_cpu_wall, 0);
@@ -580,6 +588,9 @@ static int cpufreq_governor_alucard(struct cpufreq_policy *policy,
 		if (num_online_cpus() > 1) {
 			delay -= jiffies % delay;
 		}
+
+		if (delay <= 0)
+			delay = usecs_to_jiffies(MIN_SAMPLING_RATE);
 
 		INIT_DEFERRABLE_WORK(&this_alucard_cpuinfo->work, do_alucard_timer);
 		queue_delayed_work_on(this_alucard_cpuinfo->cpu, alucard_wq, &this_alucard_cpuinfo->work, delay);
@@ -651,6 +662,7 @@ static int __init cpufreq_gov_alucard_init(void)
 	for_each_possible_cpu(cpu) {
 		struct cpufreq_alucard_cpuinfo *this_alucard_cpuinfo = &per_cpu(od_alucard_cpuinfo, cpu);
 
+<<<<<<< HEAD
 		this_alucard_cpuinfo->freq_table = cpufreq_frequency_get_table(cpu);
 
 		this_alucard_cpuinfo->pump_inc_step_at_min_freq = 2;
@@ -661,6 +673,12 @@ static int __init cpufreq_gov_alucard_init(void)
 			this_alucard_cpuinfo->pump_inc_step = 1;
 
 		this_alucard_cpuinfo->pump_dec_step = 1;
+=======
+		this_alucard_cpuinfo->cpu = cpu;
+		this_alucard_cpuinfo->pump_inc_step_at_min_freq = PUMP_INC_STEP_AT_MIN_FREQ;
+		this_alucard_cpuinfo->pump_inc_step = PUMP_INC_STEP;
+		this_alucard_cpuinfo->pump_dec_step = PUMP_DEC_STEP;
+>>>>>>> f8cb8bb... alucard, darkness, nightmare governors: check if policy->cpu is assigned on the right cpu. Code style.
 	}
 
 	return cpufreq_register_governor(&cpufreq_gov_alucard);

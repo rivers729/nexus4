@@ -294,10 +294,17 @@ static void do_darkness_timer(struct work_struct *work)
 		delay -= jiffies % delay;
 	}
 
+<<<<<<< HEAD
 #if 0
 	if (need_load_eval(darkness_cpuinfo, sampling_rate))
 #endif
 		darkness_check_cpu(darkness_cpuinfo);
+=======
+	if (delay <= 0)
+		delay = usecs_to_jiffies(MIN_SAMPLING_RATE);
+
+	mod_delayed_work_on(cpu, system_wq, &darkness_cpuinfo->work, delay);
+>>>>>>> f8cb8bb... alucard, darkness, nightmare governors: check if policy->cpu is assigned on the right cpu. Code style.
 
 	queue_delayed_work_on(cpu, darkness_wq, &darkness_cpuinfo->work, delay);
 	mutex_unlock(&darkness_cpuinfo->timer_mutex);
@@ -317,11 +324,18 @@ static int cpufreq_governor_darkness(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
-		if ((!cpu_online(cpu)) || (!policy->cur))
+		if ((!cpu_online(cpu)) ||
+			(!policy->cur) ||
+			(cpu != this_darkness_cpuinfo->cpu))
 			return -EINVAL;
 
 		mutex_lock(&darkness_mutex);
 
+<<<<<<< HEAD
+=======
+		this_darkness_cpuinfo->freq_table = cpufreq_frequency_get_table(cpu);
+
+>>>>>>> f8cb8bb... alucard, darkness, nightmare governors: check if policy->cpu is assigned on the right cpu. Code style.
 		this_darkness_cpuinfo->cur_policy = policy;
 
 		this_darkness_cpuinfo->prev_cpu_idle = get_cpu_idle_time(cpu, &this_darkness_cpuinfo->prev_cpu_wall, io_busy);
@@ -356,6 +370,9 @@ static int cpufreq_governor_darkness(struct cpufreq_policy *policy,
 		if (num_online_cpus() > 1) {
 			delay -= jiffies % delay;
 		}
+
+		if (delay <= 0)
+			delay = usecs_to_jiffies(MIN_SAMPLING_RATE);
 
 		INIT_DEFERRABLE_WORK(&this_darkness_cpuinfo->work, do_darkness_timer);
 		queue_delayed_work_on(this_darkness_cpuinfo->cpu, darkness_wq, &this_darkness_cpuinfo->work, delay);
@@ -408,11 +425,19 @@ struct cpufreq_governor cpufreq_gov_darkness = {
 
 static int __init cpufreq_gov_darkness_init(void)
 {
+<<<<<<< HEAD
 	darkness_wq = alloc_workqueue("darkness_wq", WQ_HIGHPRI, 0);
 
 	if (!darkness_wq) {
 		printk(KERN_ERR "Failed to create darkness workqueue\n");
 		return -EFAULT;
+=======
+	unsigned int cpu;
+
+	for_each_possible_cpu(cpu) {
+		struct cpufreq_darkness_cpuinfo *this_darkness_cpuinfo = &per_cpu(od_darkness_cpuinfo, cpu);
+		this_darkness_cpuinfo->cpu = cpu;
+>>>>>>> f8cb8bb... alucard, darkness, nightmare governors: check if policy->cpu is assigned on the right cpu. Code style.
 	}
 
 	return cpufreq_register_governor(&cpufreq_gov_darkness);
