@@ -11,8 +11,6 @@ obj-$(CONFIG_CPU_FREQ_GOV_ONDEMAND)	+= cpufreq_ondemand.o
 obj-$(CONFIG_CPU_FREQ_GOV_CONSERVATIVE)	+= cpufreq_conservative.o
 obj-$(CONFIG_CPU_FREQ_GOV_INTERACTIVE)	+= cpufreq_interactive.o
 obj-$(CONFIG_CPU_FREQ_GOV_INTELLIDEMAND)+= cpufreq_intellidemand.o
-<<<<<<< HEAD
-=======
 obj-$(CONFIG_CPU_FREQ_GOV_SLIM)			+= cpufreq_slim.o
 obj-$(CONFIG_CPU_FREQ_GOV_SMARTMAX)     += cpufreq_smartmax.o
 obj-$(CONFIG_CPU_FREQ_GOV_NIGHTMARE)	+= cpufreq_nightmare.o
@@ -25,13 +23,6 @@ obj-$(CONFIG_CPU_FREQ_GOV_ONDEMANDPLUS)	+= cpufreq_ondemandplus.o
 obj-$(CONFIG_CPU_FREQ_GOV_HYPER)	+= cpufreq_HYPER.o
 obj-$(CONFIG_CPU_FREQ_GOV_DARKNESS)	+= cpufreq_darkness.o
 obj-$(CONFIG_CPU_FREQ_GOV_ALUCARD)	+= cpufreq_alucard.o
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> e8b2ccf... Add darkness & alucard update nightmware & alucard cpufreqs to use cpufreq_relation_c
-=======
->>>>>>> e8b2ccf... Add darkness & alucard update nightmware & alucard cpufreqs to use cpufreq_relation_c
-=======
->>>>>>> e8b2ccf... Add darkness & alucard update nightmware & alucard cpufreqs to use cpufreq_relation_c
 
 # CPUfreq cross-arch helpers
 obj-$(CONFIG_CPU_FREQ_TABLE)		+= freq_table.o
