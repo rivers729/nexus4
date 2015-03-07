@@ -25,6 +25,9 @@ obj-$(CONFIG_CPU_FREQ_GOV_ONDEMANDPLUS)	+= cpufreq_ondemandplus.o
 obj-$(CONFIG_CPU_FREQ_GOV_HYPER)	+= cpufreq_HYPER.o
 obj-$(CONFIG_CPU_FREQ_GOV_DARKNESS)	+= cpufreq_darkness.o
 obj-$(CONFIG_CPU_FREQ_GOV_ALUCARD)	+= cpufreq_alucard.o
+<<<<<<< HEAD
+>>>>>>> e8b2ccf... Add darkness & alucard update nightmware & alucard cpufreqs to use cpufreq_relation_c
+=======
 >>>>>>> e8b2ccf... Add darkness & alucard update nightmware & alucard cpufreqs to use cpufreq_relation_c
 
 # CPUfreq cross-arch helpers
