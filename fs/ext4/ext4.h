@@ -29,6 +29,7 @@
 #include <linux/wait.h>
 #include <linux/blockgroup_lock.h>
 #include <linux/percpu_counter.h>
+#include <linux/ratelimit.h>
 #ifdef __KERNEL__
 #include <linux/compat.h>
 #endif
@@ -1267,6 +1268,11 @@ struct ext4_sb_info {
 
 	/* record the last minlen when FITRIM is called. */
 	atomic_t s_last_trim_minblks;
+
+	/* Ratelimit ext4 messages. */
+	struct ratelimit_state s_err_ratelimit_state;
+	struct ratelimit_state s_warning_ratelimit_state;
+	struct ratelimit_state s_msg_ratelimit_state;
 };
 
 static inline struct ext4_sb_info *EXT4_SB(struct super_block *sb)
@@ -2225,12 +2231,6 @@ static inline void ext4_unlock_group(struct super_block *sb,
 					ext4_group_t group)
 {
 	spin_unlock(ext4_group_lock_ptr(sb, group));
-}
-
-static inline void ext4_mark_super_dirty(struct super_block *sb)
-{
-	if (EXT4_SB(sb)->s_journal == NULL)
-		sb->s_dirt =1;
 }
 
 /*
